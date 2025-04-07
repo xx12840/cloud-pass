@@ -1,0 +1,20 @@
+name = "cloudpass-api"
+main = "src/index.js"
+compatibility_date = "2023-05-18"
+
+# KV 命名空间
+kv_namespaces = [
+  { binding = "PASSWORDS_KV", id = "your-kv-id", preview_id = "your-preview-kv-id" }
+]
+
+# R2 存储桶
+[[r2_buckets]]
+binding = "ICONS_BUCKET"
+bucket_name = "cloudpass-icons"
+preview_bucket_name = "cloudpass-icons-dev"
+
+# 环境变量
+[vars]
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "admin"
+JWT_SECRET = "your-jwt-secret-key"
