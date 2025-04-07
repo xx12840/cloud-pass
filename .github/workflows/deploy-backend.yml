@@ -1,21 +1,13 @@
-name: Deploy Backend to Cloudflare Workers
+name: 部署后端
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
-    inputs:
-      environment:
-        description: '部署环境'
-        required: true
-        default: 'production'
-        type: choice
-        options:
-          - production
-          - staging
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: 部署后端到 Cloudflare Workers
     
     steps:
       - name: 检出代码
@@ -24,50 +16,16 @@ jobs:
       - name: 设置 Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '16'
-          cache: 'npm'
+          node-version: '18'
           
       - name: 安装依赖
-        run: npm ci
-        
-      - name: 安装 Wrangler
-        run: npm install -g wrangler
-        
-      - name: 创建 KV 命名空间（如果不存在）
         run: |
-          # 检查 KV 命名空间是否存在，如果不存在则创建
-          KV_ID=$(wrangler kv:namespace list | grep PASSWORDS_KV | awk '{print $2}' || echo "")
-          if [ -z "$KV_ID" ]; then
-            echo "创建 KV 命名空间 PASSWORDS_KV"
-            wrangler kv:namespace create PASSWORDS_KV
-          else
-            echo "KV 命名空间 PASSWORDS_KV 已存在"
-          fi
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          
-      - name: 创建 R2 存储桶（如果不存在）
-        run: |
-          # 检查 R2 存储桶是否存在，如果不存在则创建
-          BUCKET_EXISTS=$(wrangler r2 bucket list | grep cloudpass-icons || echo "")
-          if [ -z "$BUCKET_EXISTS" ]; then
-            echo "创建 R2 存储桶 cloudpass-icons"
-            wrangler r2 bucket create cloudpass-icons
-          else
-            echo "R2 存储桶 cloudpass-icons 已存在"
-          fi
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          cd cloudpass-api
+          npm ci
           
       - name: 部署到 Cloudflare Workers
         run: |
-          if [ "${{ github.event.inputs.environment }}" == "production" ]; then
-            wrangler deploy
-          else
-            wrangler deploy --env staging
-          fi
+          cd cloudpass-api
+          npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
