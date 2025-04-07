@@ -1,0 +1,46 @@
+name: Deploy Frontend to Cloudflare Pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: '部署环境'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: 部署前端到 Cloudflare Pages
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v3
+        
+      - name: 设置 Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'npm'
+          
+      - name: 安装依赖
+        run: npm ci
+        
+      - name: 构建项目
+        run: npm run build
+        env:
+          REACT_APP_API_URL: ${{ secrets.API_URL }}
+          
+      - name: 部署到 Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: cloudpass-frontend
+          directory: build
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.event.inputs.environment == 'production' && 'main' || 'staging' }}
